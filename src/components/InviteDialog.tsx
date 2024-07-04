@@ -4,7 +4,7 @@ import RingResizeIcon from '@/icons/RingResize';
 import { Button, Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import QRCode from 'qrcode';
 import type React from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export interface InviteDialogProps {
   isOpen: boolean;
@@ -14,15 +14,11 @@ export interface InviteDialogProps {
 const InviteDialog: React.FC<InviteDialogProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [img, setImg] = useState<string>('');
-
   const { room } = useApp();
-  const url = useMemo(() => {
-    return process.env.NEXT_PUBLIC_BASE_HOST + '/r/' + room;
-  }, [room]);
 
   useEffect(() => {
     setLoading(true);
-    QRCode.toDataURL(url)
+    QRCode.toDataURL(window.location.origin + '/r/' + room)
       .then((img) => {
         setImg(img);
       })
@@ -30,7 +26,7 @@ const InviteDialog: React.FC<InviteDialogProps> = ({ isOpen, onClose }) => {
       .finally(() => {
         setLoading(false);
       });
-  }, [url]);
+  }, [room]);
 
   return (
     <Dialog

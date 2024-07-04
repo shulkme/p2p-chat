@@ -14,6 +14,10 @@ export default function Page({ params }: { params: { room: string } }) {
 
   const [messages, setMessages] = useState<MessageType[]>([]);
 
+  const emitMessage = (message: MessageType) => {
+    setMessages((history) => [...history, message]);
+  };
+
   useEffect(() => {
     setAppState?.({ room });
     Fancybox.bind('[data-fancybox]', {
@@ -33,10 +37,8 @@ export default function Page({ params }: { params: { room: string } }) {
 
   useEffect(() => {
     if (!socket) return;
-    socket.emit('join', room);
-
     socket.on('message', (data: MessageType) => {
-      setMessages((history) => [...history, data]);
+      emitMessage(data);
     });
 
     return () => {
@@ -53,14 +55,14 @@ export default function Page({ params }: { params: { room: string } }) {
         <div className="flex-auto overflow-auto">
           <div className="wrapper">
             <div className="space-y-2 py-10 px-2">
-              {messages.map((msg, index) => (
-                <Bubble key={index} primary={msg.uid === uid} {...msg} />
+              {messages.map((msg) => (
+                <Bubble key={msg.id} primary={msg.uid === uid} {...msg} />
               ))}
             </div>
           </div>
         </div>
         <div className="flex-none -mt-4">
-          <ActionBar />
+          <ActionBar emitMessage={emitMessage} />
         </div>
       </main>
     </div>

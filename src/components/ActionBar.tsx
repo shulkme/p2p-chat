@@ -4,17 +4,75 @@ import ArrowUpIcon from '@/icons/ArrowUp';
 import PaperclipIcon from '@/icons/Paperclip';
 import { MessageType } from '@/types';
 import { cn } from '@/utils/classnames';
-import { Button, Textarea, TextareaProps } from '@headlessui/react';
+import {
+  Button,
+  Input,
+  InputProps,
+  Textarea,
+  TextareaProps,
+} from '@headlessui/react';
 import React, { useEffect, useRef, useState } from 'react';
 
-const ActionBar: React.FC = () => {
+const ActionBar: React.FC<{
+  emitMessage: (message: MessageType) => void;
+}> = ({ emitMessage }) => {
   const { socket, room, uid, shut } = useApp();
 
   const [text, setText] = useState<string>('');
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const onUploadChange = () => {};
+  const fileRef = useRef<HTMLInputElement | null>(null);
+
+  const pushMessage = (obj: Partial<MessageType>) => {
+    const data: MessageType = {
+      id: crypto.randomUUID(),
+      uid,
+      room,
+      content: '',
+      meta: {},
+      type: 'TEXT',
+      ...obj,
+    };
+    emitMessage(data);
+    if (socket) socket.emit('message', data);
+  };
+
+  const onUploadChange: InputProps['onChange'] = (event) => {
+    const files = event.target.files;
+
+    if (!files || files.length < 1) return;
+
+    const file = files[0];
+
+    const CHUNK_SIZE = 1024 * 1024; // 1MB
+    const chunks = Math.ceil(file.size / CHUNK_SIZE);
+    let index = 0;
+
+    const readAndUploadChunk = () => {
+      const start = index * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end);
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = reader.result?.toString().split(',')[1];
+        socket.emit('chunk', {
+          filename: file.name,
+          chunk: base64,
+          chunks,
+          index: ++index,
+        });
+
+        if (index < chunks) {
+          readAndUploadChunk();
+        }
+      };
+      reader.readAsDataURL(chunk);
+    };
+
+    readAndUploadChunk();
+  };
 
   // 文本框监听
   const onTextChange: TextareaProps['onChange'] = (event) => {
@@ -29,15 +87,11 @@ const ActionBar: React.FC = () => {
 
   // 文本框提交事件
   const onTextSubmit = () => {
-    if (text.trim() !== '' && socket) {
-      const data: MessageType = {
-        uid,
-        room,
+    if (text.trim() !== '') {
+      pushMessage({
         content: text,
         type: 'TEXT',
-        meta: {},
-      };
-      socket.emit('message', data);
+      });
     }
     setText('');
     if (textareaRef.current) {
@@ -69,12 +123,19 @@ const ActionBar: React.FC = () => {
       <div className="wrapper py-4">
         <div className="flex items-end gap-1 bg-white p-2 rounded-3xl shadow-2xl">
           <div className="flex-none">
+            <Input
+              ref={fileRef}
+              type="file"
+              className="hidden"
+              onChange={onUploadChange}
+            />
             <Button
               disabled={shut}
               className={cn(
                 'flex justify-center size-9 rounded-full items-center bg-slate-100 text-black text-lg [&:not([data-disabled])]:hover:bg-slate-200',
                 'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed',
               )}
+              onClick={() => fileRef.current?.click()}
             >
               <PaperclipIcon />
             </Button>

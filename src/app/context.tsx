@@ -50,6 +50,9 @@ export const AppProvider: React.FC<React.PropsWithChildren> = ({
   useEffect(() => {
     // 初始化socket
     const socket = io({
+      query: {
+        room: state.room,
+      },
       transports: ['websocket', 'polling'],
       withCredentials: true,
     });
@@ -69,7 +72,7 @@ export const AppProvider: React.FC<React.PropsWithChildren> = ({
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [state.room]);
 
   return (
     <AppContext.Provider
