@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 217 33% 17%;
+    --primary-foreground: 0 0% 100%;
+  }
+
+  *::-webkit-scrollbar {
+    @apply size-1;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 rounded-full;
+  }
+
+  body {
+    @apply bg-slate-200;
+  }
+}
+
+@layer components {
+  .wrapper {
+    @apply max-w-none sm:max-w-screen-sm md:max-w-screen-md lg:max-w-screen-lg mx-auto px-4;
+  }
+}
