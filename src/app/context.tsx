@@ -1,14 +1,20 @@
 'use client';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import io, { Socket } from 'socket.io-client';
 
 interface AppContextType {
   socket: Socket | null;
   uid: string;
   room: string;
-  setRoom: (room: string) => void;
   users: number;
-  setUsers: (users: number) => void;
+  shut: boolean;
+  setAppState?: (state: Partial<AppContextType>) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -24,44 +30,53 @@ export const useApp = () => {
 export const AppProvider: React.FC<React.PropsWithChildren> = ({
   children,
 }) => {
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [state, setState] = useState<AppContextType>({
+    socket: null,
+    uid: '',
+    room: '',
+    shut: true,
+    users: 0,
+  });
 
-  const [uid, setUid] = useState<string>('');
+  // 禁言，房间至少2人才可以发言
+  const shut = useMemo(() => state.users < 2, [state.users]);
 
-  const [room, setRoom] = useState<string>('');
-
-  const [users, setUsers] = useState<number>(0);
+  // 重写状态更新
+  const setAppState = (obj: Partial<AppContextType>) => {
+    setState((prevState) => ({ ...prevState, ...obj }));
+  };
 
   // 创建连接
   useEffect(() => {
     // 初始化socket
-    const the_socket = io({
+    const socket = io({
       transports: ['websocket', 'polling'],
       withCredentials: true,
     });
 
-    the_socket.on('connect', () => {
-      the_socket.on('uid', (uid: string) => {
-        setUid(uid);
-      });
+    // 建立连接
+    socket.on('connect', () => {
+      setAppState({ uid: socket.id });
     });
 
-    setSocket(the_socket);
+    // 活跃通知
+    socket.on('active', (users: number) => {
+      setAppState({ users });
+    });
+
+    setAppState({ socket });
 
     return () => {
-      the_socket.disconnect();
+      socket.disconnect();
     };
   }, []);
 
   return (
     <AppContext.Provider
       value={{
-        socket,
-        users,
-        uid,
-        room,
-        setRoom,
-        setUsers,
+        ...state,
+        shut,
+        setAppState,
       }}
     >
       {children}

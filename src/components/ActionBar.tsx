@@ -8,7 +8,7 @@ import { Button, Textarea, TextareaProps } from '@headlessui/react';
 import React, { useEffect, useRef, useState } from 'react';
 
 const ActionBar: React.FC = () => {
-  const { socket, room, uid } = useApp();
+  const { socket, room, uid, shut } = useApp();
 
   const [text, setText] = useState<string>('');
 
@@ -16,6 +16,7 @@ const ActionBar: React.FC = () => {
 
   const onUploadChange = () => {};
 
+  // 文本框监听
   const onTextChange: TextareaProps['onChange'] = (event) => {
     const lines = event.target.value.split('\n').length;
     if (lines > 5) {
@@ -26,6 +27,7 @@ const ActionBar: React.FC = () => {
     setText(event.target.value);
   };
 
+  // 文本框提交事件
   const onTextSubmit = () => {
     if (text.trim() !== '' && socket) {
       const data: MessageType = {
@@ -43,6 +45,7 @@ const ActionBar: React.FC = () => {
     }
   };
 
+  // 回车监听
   const onTextKeyDown: TextareaProps['onKeyDown'] = (event) => {
     if (event.key === 'Enter') {
       if (event.ctrlKey) {
@@ -54,6 +57,7 @@ const ActionBar: React.FC = () => {
     }
   };
 
+  // 自动滚动条
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
@@ -66,6 +70,7 @@ const ActionBar: React.FC = () => {
         <div className="flex items-end gap-1 bg-white p-2 rounded-3xl shadow-2xl">
           <div className="flex-none">
             <Button
+              disabled={shut}
               className={cn(
                 'flex justify-center size-9 rounded-full items-center bg-slate-100 text-black text-lg [&:not([data-disabled])]:hover:bg-slate-200',
                 'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed',
@@ -77,17 +82,21 @@ const ActionBar: React.FC = () => {
           <div className="flex-auto">
             <Textarea
               ref={textareaRef}
+              disabled={shut}
               value={text}
-              placeholder="发送消息"
+              placeholder={shut ? '请等待其他人' : '发送消息'}
               rows={1}
-              className="block resize-none outline-none text-sm w-full text-slate-950 placeholder:text-slate-400 p-2"
+              className={cn(
+                'block resize-none outline-none text-sm w-full text-slate-950 placeholder:text-slate-400 p-2 bg-transparent',
+                'data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed',
+              )}
               onChange={onTextChange}
               onKeyDown={onTextKeyDown}
             />
           </div>
           <div className="flex-none">
             <Button
-              disabled={text.trim() === ''}
+              disabled={shut || text.trim() === ''}
               className={cn(
                 'flex justify-center size-9 rounded-full items-center bg-primary text-primary-foreground text-lg [&:not([data-disabled])]:hover:bg-primary/80',
                 'data-[disabled]:opacity-70 data-[disabled]:cursor-not-allowed',

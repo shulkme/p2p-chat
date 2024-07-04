@@ -1,5 +1,6 @@
 'use client';
 import { useApp } from '@/app/context';
+import RingResizeIcon from '@/icons/RingResize';
 import { Button, Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import QRCode from 'qrcode';
 import type React from 'react';
@@ -51,11 +52,15 @@ const InviteDialog: React.FC<InviteDialogProps> = ({ isOpen, onClose }) => {
               邀请
             </DialogTitle>
             <p className="mt-4 text-center">
-              <img
-                src={img}
-                alt="qrcode"
-                className="block size-64 bg-slate-200 mx-auto"
-              />
+              <div className="size-64 bg-slate-200 mx-auto">
+                {loading ? (
+                  <div className="size-full flex justify-center items-center text-4xl text-primary/50">
+                    <RingResizeIcon />
+                  </div>
+                ) : (
+                  <img src={img} alt="qrcode" className="block size-full" />
+                )}
+              </div>
               <Button
                 className="bg-primary text-primary-foreground text-sm mt-4 px-4 py-2 rounded-full hover:bg-primary/80"
                 onClick={onClose}

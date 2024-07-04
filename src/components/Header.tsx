@@ -1,30 +1,19 @@
 'use client';
 import { useApp } from '@/app/context';
 import InviteDialog from '@/components/InviteDialog';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 const Header: React.FC = () => {
   const [open, setOpen] = useState(false);
 
-  const { users, setUsers, socket } = useApp();
-
-  useEffect(() => {
-    if (!socket) return;
-    socket.on('active', (users: number) => {
-      console.log(users);
-      setUsers(users);
-    });
-    return () => {
-      socket.off('active');
-    };
-  }, [socket]);
+  const { users } = useApp();
 
   return (
     <>
       <div className="flex justify-between items-center py-3 px-4">
         <div className="flex gap-2 items-center">
-          <div className="w-6 h-6 bg-white"></div>
-          <div className="text-base font-semibold leading-none">BBJ</div>
+          <div className="w-6 h-6">👋🏻</div>
+          <div className="text-base font-semibold leading-none">P2P</div>
         </div>
         <div className="text-sm flex gap-1 items-center leading-none">
           <span>在线：{users}人</span>

@@ -10,12 +10,12 @@ import { useEffect, useState } from 'react';
 
 export default function Page({ params }: { params: { room: string } }) {
   const { room } = params;
-  const { setRoom, socket, uid } = useApp();
+  const { setAppState, socket, uid } = useApp();
 
   const [messages, setMessages] = useState<MessageType[]>([]);
 
   useEffect(() => {
-    setRoom(room);
+    setAppState?.({ room });
     Fancybox.bind('[data-fancybox]', {
       Thumbs: false,
       Carousel: {
@@ -34,6 +34,7 @@ export default function Page({ params }: { params: { room: string } }) {
   useEffect(() => {
     if (!socket) return;
     socket.emit('join', room);
+
     socket.on('message', (data: MessageType) => {
       setMessages((history) => [...history, data]);
     });
