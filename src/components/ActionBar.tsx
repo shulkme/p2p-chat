@@ -2,7 +2,7 @@
 import { useApp } from '@/app/context';
 import ArrowUpIcon from '@/icons/ArrowUp';
 import PaperclipIcon from '@/icons/Paperclip';
-import { MessageType } from '@/types';
+import { ChunkType, MessageType, MetaType } from '@/types';
 import { cn } from '@/utils/classnames';
 import {
   Button,
@@ -24,18 +24,17 @@ const ActionBar: React.FC<{
 
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  const pushMessage = (obj: Partial<MessageType>) => {
+  const pushMessage = (obj: Partial<MessageType>, remote: boolean = true) => {
     const data: MessageType = {
       id: crypto.randomUUID(),
       uid,
       room,
       content: '',
-      meta: {},
       type: 'TEXT',
       ...obj,
     };
     emitMessage(data);
-    if (socket) socket.emit('message', data);
+    if (socket && remote) socket.emit('message', data);
   };
 
   const onUploadChange: InputProps['onChange'] = (event) => {
@@ -45,9 +44,28 @@ const ActionBar: React.FC<{
 
     const file = files[0];
 
-    const CHUNK_SIZE = 1024 * 1024; // 1MB
+    const CHUNK_SIZE = 1024 * 10; // 10kb
     const chunks = Math.ceil(file.size / CHUNK_SIZE);
     let index = 0;
+
+    const meta: MetaType = {
+      mine: file.type,
+      size: file.size,
+      name: file.name,
+      url: '',
+    };
+
+    const data: Partial<MessageType> = {
+      id: crypto.randomUUID(),
+      type: 'MEDIA',
+      content: file.name,
+      meta: {
+        ...meta,
+        percentage: 0,
+      },
+    };
+
+    pushMessage(data, false);
 
     const readAndUploadChunk = () => {
       const start = index * CHUNK_SIZE;
@@ -62,7 +80,9 @@ const ActionBar: React.FC<{
           chunk: base64,
           chunks,
           index: ++index,
-        });
+          id: data.id,
+          meta,
+        } as ChunkType);
 
         if (index < chunks) {
           readAndUploadChunk();

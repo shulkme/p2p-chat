@@ -1,10 +1,45 @@
-import { MessageType } from '@/types';
+import { MessageType, MetaType } from '@/types';
 import { cn } from '@/utils/classnames';
+import { get_file_type } from '@/utils/file';
 import React, { useMemo } from 'react';
 
 export interface BubbleProps extends MessageType {
   primary?: boolean;
 }
+
+const MediaPreview: React.FC<MetaType> = (meta) => {
+  const type = get_file_type(meta.mine);
+
+  if (meta.percentage && meta.percentage < 100) {
+    return (
+      <div className="w-52 h-24 flex items-center justify-center text-sm">
+        {meta.percentage.toFixed(2)}%...
+      </div>
+    );
+  }
+
+  switch (type) {
+    case 'image':
+      return (
+        <img
+          className="w-full h-auto"
+          src={meta.url}
+          alt={meta.name}
+          data-fancybox
+        />
+      );
+    case 'video':
+      return <video src={meta.url} title={meta.name} data-fancybox />;
+    case 'document':
+      return (
+        <div>
+          <>doc</>
+        </div>
+      );
+    default:
+      return <>{meta.name}</>;
+  }
+};
 
 const Bubble: React.FC<BubbleProps> = (props) => {
   const dom = useMemo(() => {
@@ -12,7 +47,7 @@ const Bubble: React.FC<BubbleProps> = (props) => {
       case 'TEXT':
         return props.content;
       case 'MEDIA':
-        return <>file</>;
+        return <MediaPreview {...props.meta} />;
       default:
         return <>未知消息类型</>;
     }
@@ -39,7 +74,7 @@ const Bubble: React.FC<BubbleProps> = (props) => {
             : 'rounded-bl-none bg-slate-100 text-slate-950 ring-slate-100',
         )}
       >
-        <div className="text-sm [&>img]:max-w-full [&>img]:h-auto">{dom}</div>
+        <div className="text-sm [&>*]:max-w-full">{dom}</div>
       </div>
     </div>
   );

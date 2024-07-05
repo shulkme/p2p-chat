@@ -3,7 +3,7 @@ import { useApp } from '@/app/context';
 import ActionBar from '@/components/ActionBar';
 import Bubble from '@/components/Bubble';
 import Header from '@/components/Header';
-import { MessageType } from '@/types';
+import { MessageType, ProgressType } from '@/types';
 import { Fancybox } from '@fancyapps/ui';
 import '@fancyapps/ui/dist/fancybox/fancybox.css';
 import { useEffect, useState } from 'react';
@@ -41,6 +41,29 @@ export default function Page({ params }: { params: { room: string } }) {
       emitMessage(data);
     });
 
+    socket.on('upload-progress', (data: ProgressType) => {
+      const { id, percentage, url } = data;
+      setMessages((prevState) =>
+        prevState.map((msg) => {
+          const meta = {
+            ...msg.meta,
+            percentage,
+            url,
+          };
+          return msg.id === id ? { ...msg, meta } : msg;
+        }),
+      );
+    });
+
+    socket.on('upload-failed', (data: { id: string }) => {
+      const { id } = data;
+      setMessages((prevState) =>
+        prevState.map((msg) => {
+          return msg.id === id ? { ...msg, content: '上传失败' } : msg;
+        }),
+      );
+    });
+
     return () => {
       socket.off('message');
     };
@@ -58,6 +81,22 @@ export default function Page({ params }: { params: { room: string } }) {
               {messages.map((msg) => (
                 <Bubble key={msg.id} primary={msg.uid === uid} {...msg} />
               ))}
+              <Bubble
+                key={1}
+                primary
+                content={''}
+                type={'MEDIA'}
+                id={'123'}
+                uid={uid}
+                room={room}
+                meta={{
+                  name: '',
+                  size: 0,
+                  mine: 'image',
+                  url: '',
+                  percentage: 10,
+                }}
+              ></Bubble>
             </div>
           </div>
         </div>

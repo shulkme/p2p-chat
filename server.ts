@@ -1,4 +1,4 @@
-import { ChunkType, MessageType } from '@/types';
+import { ChunkType, MessageType, ProgressType } from '@/types';
 import * as fs from 'fs';
 import { createServer } from 'http';
 import next from 'next';
@@ -42,21 +42,43 @@ app.prepare().then(() => {
 
     // 分片文件上传
     socket.on('chunk', (data: ChunkType) => {
-      const { filename, chunk, chunks, index } = data;
+      const { filename, chunk, chunks, index, id, meta } = data;
 
-      const filePath = path.join(__dirname, 'uploads', filename);
+      const ext = filename.split('.').pop();
+
+      const filePath = path.join(
+        __dirname,
+        'uploads',
+        [id, ext].filter(Boolean).join('.'),
+      );
 
       fs.appendFile(filePath, Buffer.from(chunk, 'base64'), (err) => {
         if (err) {
           console.log('Error:', err);
-          socket.emit('upload-failed', { filename });
+          socket.emit('upload-failed', { id });
           return;
         }
 
-        socket.emit('progress', { filename, index, chunks });
+        socket.emit('upload-progress', {
+          id,
+          filename,
+          index,
+          url: filePath,
+          percentage: (index / chunks) * 100,
+        } as ProgressType);
 
         if (index === chunks) {
-          socket.to(room).emit('file', { filename, filePath });
+          socket.to(room).emit('message', {
+            id: id,
+            room,
+            uid: socket.id,
+            content: filename,
+            type: 'MEDIA',
+            meta: {
+              ...meta,
+              url: filePath,
+            },
+          } as MessageType);
         }
       });
     });
