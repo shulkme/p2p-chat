@@ -59,13 +59,17 @@ export default function Page({ params }: { params: { room: string } }) {
       const { id } = data;
       setMessages((prevState) =>
         prevState.map((msg) => {
-          return msg.id === id ? { ...msg, content: '上传失败' } : msg;
+          return msg.id === id
+            ? { ...msg, type: 'TEXT', content: '上传失败' }
+            : msg;
         }),
       );
     });
 
     return () => {
       socket.off('message');
+      socket.off('upload-progress');
+      socket.off('upload-failed');
     };
   }, [socket]);
 
@@ -81,22 +85,6 @@ export default function Page({ params }: { params: { room: string } }) {
               {messages.map((msg) => (
                 <Bubble key={msg.id} primary={msg.uid === uid} {...msg} />
               ))}
-              <Bubble
-                key={1}
-                primary
-                content={''}
-                type={'MEDIA'}
-                id={'123'}
-                uid={uid}
-                room={room}
-                meta={{
-                  name: '',
-                  size: 0,
-                  mine: 'image',
-                  url: '',
-                  percentage: 10,
-                }}
-              ></Bubble>
             </div>
           </div>
         </div>

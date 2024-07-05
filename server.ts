@@ -1,4 +1,4 @@
-import { ChunkType, MessageType, ProgressType } from '@/types';
+import { MessageType, MetaType, ProgressType } from '@/types';
 import * as fs from 'fs';
 import { createServer } from 'http';
 import next from 'next';
@@ -40,49 +40,57 @@ app.prepare().then(() => {
       socket.to(room).emit('message', message);
     });
 
-    // 分片文件上传
-    socket.on('chunk', (data: ChunkType) => {
-      const { filename, chunk, chunks, index, id, meta } = data;
+    // 开始上传
+    socket.on('start-upload', (message: MessageType) => {
+      let bytesReceived = 0;
+      const { id, meta } = message;
+      const { name, size } = meta as MetaType;
+      const filePath = path.join(__dirname, 'uploads', id + '_' + name);
+      const writableStream = fs.createWriteStream(filePath);
 
-      const ext = filename.split('.').pop();
+      const onChunk = (data) => {
+        const { chunk } = data;
+        const buffer = Buffer.from(chunk, 'base64');
+        writableStream.write(buffer, (error) => {
+          if (error) {
+            socket.emit('upload-failed', { id });
+            return;
+          }
+          bytesReceived += buffer.length;
+          const percentage = Math.round((bytesReceived / size) * 100);
+          socket.emit('upload-progress', {
+            id,
+            percentage,
+            url: filePath,
+          } as ProgressType);
+        });
+      };
 
-      const filePath = path.join(
-        __dirname,
-        'uploads',
-        [id, ext].filter(Boolean).join('.'),
-      );
-
-      fs.appendFile(filePath, Buffer.from(chunk, 'base64'), (err) => {
-        if (err) {
-          console.log('Error:', err);
-          socket.emit('upload-failed', { id });
-          return;
-        }
-
-        socket.emit('upload-progress', {
+      const onChunkEnd = () => {
+        writableStream.end();
+        socket.to(room).emit('message', {
           id,
-          filename,
-          index,
-          url: filePath,
-          percentage: (index / chunks) * 100,
-        } as ProgressType);
+          room,
+          uid: socket.id,
+          content: name,
+          type: 'MEDIA',
+          meta: {
+            ...meta,
+            url: filePath,
+          },
+        } as MessageType);
+        socket.off('chunk', onChunk);
+        socket.off('end-upload', onChunkEnd);
+      };
 
-        if (index === chunks) {
-          socket.to(room).emit('message', {
-            id: id,
-            room,
-            uid: socket.id,
-            content: filename,
-            type: 'MEDIA',
-            meta: {
-              ...meta,
-              url: filePath,
-            },
-          } as MessageType);
-        }
-      });
+      socket.off('chunk', onChunk);
+      socket.off('end-upload', onChunkEnd);
+
+      socket.on('chunk', onChunk);
+      socket.on('end-upload', onChunkEnd);
     });
 
+    // 断开连接
     socket.on('disconnect', () => {
       rooms.get(room).delete(socket.id);
 

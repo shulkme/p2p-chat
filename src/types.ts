@@ -13,6 +13,7 @@ export interface MessageType {
   content: string;
   type: 'TEXT' | 'MEDIA';
   meta?: MetaType;
+  time: Date;
 }
 
 export interface ChunkType {
@@ -24,8 +25,7 @@ export interface ChunkType {
   meta?: MetaType;
 }
 
-export interface ProgressType
-  extends Pick<ChunkType, 'id' | 'filename' | 'index'> {
+export interface ProgressType extends Pick<ChunkType, 'id'> {
   percentage: number;
   url: string;
 }

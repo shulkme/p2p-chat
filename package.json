@@ -10,7 +10,7 @@
     "@headlessui/react": "^2.1.1",
     "clsx": "^2.1.1",
     "cross-env": "^7.0.3",
-    "lodash": "^4.17.21",
+    "dayjs": "^1.11.11",
     "next": "latest",
     "qrcode": "^1.5.3",
     "react": "^18.2.0",

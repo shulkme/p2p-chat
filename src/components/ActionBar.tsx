@@ -2,7 +2,7 @@
 import { useApp } from '@/app/context';
 import ArrowUpIcon from '@/icons/ArrowUp';
 import PaperclipIcon from '@/icons/Paperclip';
-import { ChunkType, MessageType, MetaType } from '@/types';
+import { MessageType, MetaType } from '@/types';
 import { cn } from '@/utils/classnames';
 import {
   Button,
@@ -31,6 +31,7 @@ const ActionBar: React.FC<{
       room,
       content: '',
       type: 'TEXT',
+      time: new Date(),
       ...obj,
     };
     emitMessage(data);
@@ -44,9 +45,7 @@ const ActionBar: React.FC<{
 
     const file = files[0];
 
-    const CHUNK_SIZE = 1024 * 10; // 10kb
-    const chunks = Math.ceil(file.size / CHUNK_SIZE);
-    let index = 0;
+    const chunk_size = 1024 * 10; // 10kb
 
     const meta: MetaType = {
       mine: file.type,
@@ -67,31 +66,28 @@ const ActionBar: React.FC<{
 
     pushMessage(data, false);
 
-    const readAndUploadChunk = () => {
-      const start = index * CHUNK_SIZE;
-      const end = Math.min(start + CHUNK_SIZE, file.size);
-      const chunk = file.slice(start, end);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const fileSize = file.size;
+      let offset = 0;
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const base64 = reader.result?.toString().split(',')[1];
+      socket.emit('start-upload', data);
+
+      while (offset < fileSize) {
+        const chunk = reader.result.slice(offset, offset + chunk_size);
+        const base64Chunk = btoa(chunk as string); // Convert chunk to base64
+
         socket.emit('chunk', {
-          filename: file.name,
-          chunk: base64,
-          chunks,
-          index: ++index,
-          id: data.id,
-          meta,
-        } as ChunkType);
+          chunk: base64Chunk,
+        });
 
-        if (index < chunks) {
-          readAndUploadChunk();
-        }
-      };
-      reader.readAsDataURL(chunk);
+        offset += chunk_size;
+      }
+
+      socket.emit('end-upload');
     };
 
-    readAndUploadChunk();
+    reader.readAsBinaryString(file);
   };
 
   // 文本框监听

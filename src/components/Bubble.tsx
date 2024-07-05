@@ -1,5 +1,7 @@
+import PaperclipIcon from '@/icons/Paperclip';
 import { MessageType, MetaType } from '@/types';
 import { cn } from '@/utils/classnames';
+import days from '@/utils/days';
 import { get_file_type } from '@/utils/file';
 import React, { useMemo } from 'react';
 
@@ -30,14 +32,19 @@ const MediaPreview: React.FC<MetaType> = (meta) => {
       );
     case 'video':
       return <video src={meta.url} title={meta.name} data-fancybox />;
-    case 'document':
-      return (
-        <div>
-          <>doc</>
-        </div>
-      );
     default:
-      return <>{meta.name}</>;
+      return (
+        <a
+          href={meta.url}
+          download={meta.name}
+          className="flex items-center gap-1 p-3"
+        >
+          <span className="text-sm">
+            <PaperclipIcon />
+          </span>
+          <span className="break-all">{meta.name}</span>
+        </a>
+      );
   }
 };
 
@@ -60,9 +67,6 @@ const Bubble: React.FC<BubbleProps> = (props) => {
         props.primary ? 'items-end' : 'items-start',
       )}
     >
-      <div className="self-center py-4">
-        <span className="text-xs text-slate-400 leading-relaxed">刚刚</span>
-      </div>
       <div
         className={cn(
           'break-all inline-flex rounded-xl max-w-[90%] overflow-hidden ring-1',
@@ -76,6 +80,9 @@ const Bubble: React.FC<BubbleProps> = (props) => {
       >
         <div className="text-sm [&>*]:max-w-full">{dom}</div>
       </div>
+      <span className="text-xs/7 text-slate-300">
+        {days(props.time).format('HH:mm')}
+      </span>
     </div>
   );
 };
