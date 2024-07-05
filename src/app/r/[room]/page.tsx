@@ -74,7 +74,7 @@ export default function Page({ params }: { params: { room: string } }) {
   }, [socket]);
 
   return (
-    <div id="app" className="flex flex-col h-screen">
+    <div id="app" className="flex flex-col h-dvh overflow-hidden">
       <header className="flex-none">
         <Header />
       </header>

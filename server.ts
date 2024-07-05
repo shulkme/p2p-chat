@@ -7,7 +7,7 @@ import { Simulate } from 'react-dom/test-utils';
 import { Server, Socket } from 'socket.io';
 import error = Simulate.error;
 
-const port = parseInt(process.env.PORT || '3000', 10);
+const port = parseInt(process.env.NEXT_PUBLIC_PORT || '3000', 10);
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handler = app.getRequestHandler();
@@ -45,8 +45,10 @@ app.prepare().then(() => {
       let bytesReceived = 0;
       const { id, meta } = message;
       const { name, size } = meta as MetaType;
-      const filePath = path.join(__dirname, 'uploads', id + '_' + name);
+      const filename = id + '_' + name;
+      const filePath = path.join(__dirname, 'uploads', filename);
       const writableStream = fs.createWriteStream(filePath);
+      const url = process.env.NEXT_PUBLIC_HOST + '/uploads/' + filename;
 
       const onChunk = (data) => {
         const { chunk } = data;
@@ -61,7 +63,7 @@ app.prepare().then(() => {
           socket.emit('upload-progress', {
             id,
             percentage,
-            url: filePath,
+            url,
           } as ProgressType);
         });
       };
@@ -76,7 +78,7 @@ app.prepare().then(() => {
           type: 'MEDIA',
           meta: {
             ...meta,
-            url: filePath,
+            url,
           },
         } as MessageType);
         socket.off('chunk', onChunk);

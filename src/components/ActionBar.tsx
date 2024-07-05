@@ -12,6 +12,7 @@ import {
   TextareaProps,
 } from '@headlessui/react';
 import React, { useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 const ActionBar: React.FC<{
   emitMessage: (message: MessageType) => void;
@@ -24,9 +25,12 @@ const ActionBar: React.FC<{
 
   const fileRef = useRef<HTMLInputElement | null>(null);
 
+  const chunk_size = 1024 * 10; // 10kb
+  const max_upload_size = 1024 * 1024 * 10; // 10mb
+
   const pushMessage = (obj: Partial<MessageType>, remote: boolean = true) => {
     const data: MessageType = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       uid,
       room,
       content: '',
@@ -45,7 +49,9 @@ const ActionBar: React.FC<{
 
     const file = files[0];
 
-    const chunk_size = 1024 * 10; // 10kb
+    if (file.size > max_upload_size) {
+      return;
+    }
 
     const meta: MetaType = {
       mine: file.type,
@@ -55,7 +61,7 @@ const ActionBar: React.FC<{
     };
 
     const data: Partial<MessageType> = {
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       type: 'MEDIA',
       content: file.name,
       meta: {

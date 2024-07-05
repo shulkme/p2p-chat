@@ -15,7 +15,7 @@ const Header: React.FC = () => {
           <div className="w-6 h-6">👋🏻</div>
           <div className="text-base font-semibold leading-none">P2P</div>
         </div>
-        <div className="text-sm flex gap-1 items-center leading-none">
+        <div className="text-xs flex gap-1 items-center leading-none">
           <span>在线：{users}人</span>
         </div>
         <div className="flex">

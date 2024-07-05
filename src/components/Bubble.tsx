@@ -1,4 +1,5 @@
 import PaperclipIcon from '@/icons/Paperclip';
+import PlayIcon from '@/icons/Play';
 import { MessageType, MetaType } from '@/types';
 import { cn } from '@/utils/classnames';
 import days from '@/utils/days';
@@ -15,29 +16,35 @@ const MediaPreview: React.FC<MetaType> = (meta) => {
   if (meta.percentage && meta.percentage < 100) {
     return (
       <div className="w-52 h-24 flex items-center justify-center text-sm">
-        {meta.percentage.toFixed(2)}%...
+        {meta.percentage}%...
       </div>
     );
   }
 
+  let dom = <></>;
+
   switch (type) {
     case 'image':
       return (
-        <img
-          className="w-full h-auto"
-          src={meta.url}
-          alt={meta.name}
-          data-fancybox
-        />
+        <a className="block" href={meta.url} data-fancybox>
+          <img className="w-full h-auto" src={meta.url} alt={meta.name} />
+        </a>
       );
     case 'video':
-      return <video src={meta.url} title={meta.name} data-fancybox />;
+      return (
+        <a className="block relative text-4xl" href={meta.url} data-fancybox>
+          <video src={meta.url} title={meta.name} />
+          <span className="absolute z-10 flex items-center justify-center text-4xl inset-0">
+            <PlayIcon />
+          </span>
+        </a>
+      );
     default:
       return (
         <a
           href={meta.url}
           download={meta.name}
-          className="flex items-center gap-1 p-3"
+          className="flex items-center gap-1 p-3 hover:text-blue-600"
         >
           <span className="text-sm">
             <PaperclipIcon />
